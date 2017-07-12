@@ -25,7 +25,26 @@ log = logging.getLogger(__name__)
 
 class AlreadyRunningError(Exception):
     """Exception indicating that a background task is already running"""
-    pass
+
+    message = 'Requested task is already running'
+
+    def __init__(self, message=None):
+
+        if not message:
+            message = self.message
+        super(AlreadyRunningError, self).__init__(message)
+
+
+class QueueConnectionError(Exception):
+    """
+    Exception indicating that celery task was not created successfully.
+    """
+    message = 'Error occured. Please try again later.'
+
+    def __init__(self, message=None):
+        if not message:
+            message = self.message
+        super(QueueConnectionError, self).__init__(message)
 
 
 def _task_is_running(course_id, task_type, task_key):
@@ -57,7 +76,8 @@ def _reserve_task(course_id, task_type, task_key, task_input, requester):
 
     if _task_is_running(course_id, task_type, task_key):
         log.warning("Duplicate task found for task_type %s and task_key %s", task_type, task_key)
-        raise AlreadyRunningError("requested task is already running")
+        error_message = generate_already_running_error_message(task_type)
+        raise AlreadyRunningError(error_message)
 
     try:
         most_recent_id = InstructorTask.objects.latest('id').id
@@ -73,6 +93,36 @@ def _reserve_task(course_id, task_type, task_key, task_input, requester):
 
     # Create log entry now, so that future requests will know it's running.
     return InstructorTask.create(course_id, task_type, task_key, task_input, requester)
+
+
+def generate_already_running_error_message(task_type):
+    """
+
+    Returns already running error message for given task type.
+    """
+
+    message = ''
+    already_running_message_template = "The {} report is being created. " \
+                                       "To view the status of the report, see Pending Tasks below. " \
+                                       "You will be able to download the report when it is complete."
+    report_types = {
+        'grade_problems': 'problem grade',
+        'problem_responses_csv': 'problem responses',
+        'profile_info_csv': 'enrolled learner profile',
+        'may_enroll_info_csv': 'enrollment',
+        'detailed_enrollment_report': 'detailed enrollment',
+        'exec_summary_report': 'executive summary',
+        'course_survey_report': 'survey',
+        'proctored_exam_results_report': 'proctored exam results',
+        'export_ora2_data': 'ORA data',
+        'grade_course': 'grade',
+
+    }
+
+    if report_types.get(task_type):
+        message = already_running_message_template.format(report_types.get(task_type))
+
+    return message
 
 
 def _get_xmodule_instance_args(request, task_id):
@@ -188,6 +238,27 @@ def _update_instructor_task(instructor_task, task_result):
 
         if entry_needs_saving:
             instructor_task.save()
+
+
+def _update_instructor_task_state(instructor_task, task_state, message=None):
+    """
+     Update state and output of InstructorTask object.
+    """
+    instructor_task.task_state = task_state
+    if message:
+        instructor_task.task_output = message
+
+    instructor_task.save()
+
+
+def _handle_instructor_task_failure(instructor_task, error):
+    """
+    Do required operations if task creation was not complete.
+    """
+    _update_instructor_task_state(instructor_task, FAILURE, error.message)
+    log.info("instructor task (%s) failed, result: %s", instructor_task.task_id, error.message)
+
+    raise QueueConnectionError()
 
 
 def get_updated_instructor_task(task_id):
@@ -365,6 +436,10 @@ def submit_task(request, task_type, task_class, course_key, task_input, task_key
 
     task_id = instructor_task.task_id
     task_args = [instructor_task.id, _get_xmodule_instance_args(request, task_id)]
-    task_class.apply_async(task_args, task_id=task_id)
+    try:
+        task_class.apply_async(task_args, task_id=task_id)
+
+    except Exception as error:
+        _handle_instructor_task_failure(instructor_task, error)
 
     return instructor_task
