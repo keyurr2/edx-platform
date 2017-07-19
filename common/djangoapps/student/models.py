@@ -1529,6 +1529,7 @@ class CourseEnrollment(models.Model):
         """
         Returns True, if course is paid
         """
+
         paid_course = CourseMode.is_white_label(self.course_id)
         if paid_course or CourseMode.is_professional_slug(self.mode):
             return True
