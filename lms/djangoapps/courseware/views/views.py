@@ -19,6 +19,7 @@ from courseware.access import has_access, has_ccx_coach_role
 from courseware.access_utils import check_course_open_for_learner
 from courseware.courses import (
     can_self_enroll_in_course,
+    course_open_for_self_enrollment,
     get_course,
     get_course_overview_with_access,
     get_course_with_access,
@@ -55,7 +56,6 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 from django.views.generic import View
 from edxmako.shortcuts import marketing_link, render_to_response, render_to_string
-from enrollment.api import add_enrollment
 from eventtracking import tracker
 from ipware.ip import get_ip
 from lms.djangoapps.ccx.custom_exception import CCXLocatorValidationException
@@ -320,7 +320,6 @@ def course_info(request, course_id):
             'show_enroll_banner': show_enroll_banner,
             'user_is_enrolled': user_is_enrolled,
             'dates_fragment': dates_fragment,
-            'url_to_enroll': CourseTabView.url_to_enroll(course_key),
             'course_tools': course_tools,
 
             # TODO: (Experimental Code). See https://openedx.atlassian.net/wiki/display/RET/2.+In-course+Verification+Prompts
@@ -430,16 +429,6 @@ class CourseTabView(EdxFragmentView):
                 return CourseTabView.handle_exceptions(request, course, exception)
 
     @staticmethod
-    def url_to_enroll(course_key):
-        """
-        Returns the URL to use to enroll in the specified course.
-        """
-        url_to_enroll = reverse('about_course', args=[unicode(course_key)])
-        if settings.FEATURES.get('ENABLE_MKTG_SITE'):
-            url_to_enroll = marketing_link('COURSES')
-        return url_to_enroll
-
-    @staticmethod
     def register_user_access_warning_messages(request, course_key):
         """
         Register messages to be shown to the user if they have limited access.
@@ -461,14 +450,17 @@ class CourseTabView(EdxFragmentView):
                 )
             )
         elif not is_enrolled and not is_staff:
+            # Only show enroll button if course is open for enrollment.
+            enroll_link = ""
+            if course_open_for_self_enrollment(course_key):
+                enroll_link = HTML('<button class="enroll-btn btn-link">{enroll_link_label}</button>').format(
+                    enroll_link_label=_("Enroll now"),
+                )
             PageLevelMessages.register_warning_message(
                 request,
                 Text(_('You must be enrolled in the course to see course content. {enroll_link}.')).format(
-                    enroll_link=HTML('<a href="{url_to_enroll}">{enroll_link_label}</a>').format(
-                        url_to_enroll=CourseTabView.url_to_enroll(course_key),
-                        enroll_link_label=_("Enroll now"),
+                    enroll_link=enroll_link
                     )
-                )
             )
 
     @staticmethod
