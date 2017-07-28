@@ -20,6 +20,9 @@
                     <div><%- gettext('To complete the program, you must earn a verified certificate for each course.') %></div>
                 </div>
             <% } %>
+            <a href="" class="btn-brand btn cta-primary upgrade-button complete-program">
+                <%- gettext('Complete Program ($200)') %>
+            </a>
     </div>
     <div class="course-list-headings">
         <% if (inProgressCount) { %>
