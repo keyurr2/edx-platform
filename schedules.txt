@@ -1,0 +1,49 @@
+
+
+Running migrations: source /edx/app/edxapp/edxapp_env && paver update_db --settings devstack_docker
+
+TODO
+* denormalize user_id and course_id on Schedule and use it as the compound join key with enrollment?
+* handle courses not in english
+* create sailthru templates
+* course ids and asset ids in URLs do not have their "+" signs escaped
+* accessible email template
+* add price to var context
+* get docker devstack to run LMS workers
+* respect bulk email opt-out
+* bulk fetch course metadata for each celery task (course overviews and course modes)
+* how does this relate to lms/djangoapps/email_marketing? and bulk_email?
+* handle courses that don't have a verified mode
+* use read replica database instead of the live database
+* from address
+* allow configuration to change the type of BatchEmail object created (sailthru vs. django vs. ???)
+
+
+Scheduled emails
+
+Conditions
+- <n> days before enrollment verification deadline
+- <n> days after enrollment schedule start
+
+Email
+- template (jinja2? sailthru?)
+- context (dict with a bunch of enrollment-specific vars)
+  - user_username
+  - user_full_name
+  - user_email
+  - user_schedule_start_date
+  - course_id
+  - course_title
+  - course_home_url
+  - course_forum_url
+  - verified_upgrade_deadline
+  - verified_seat_price
+  - verified_upgrade_purchase_url
+
+  - function: call_to_action_button(url, text)
+  - function: link(url, text)
+  - function: days_until(date)
+  - function: days_after(date)
+
+
+Jenkins -> management command -> celery task -> Sailthru

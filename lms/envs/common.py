@@ -2242,7 +2242,7 @@ INSTALLED_APPS = (
     'database_fixups',
 
     'openedx.core.djangoapps.waffle_utils',
-    'openedx.core.djangoapps.schedules',
+    'openedx.core.djangoapps.schedules.apps.SchedulesConfig',
 
     # Features
     'openedx.features.course_bookmarks',
