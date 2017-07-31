@@ -127,7 +127,7 @@ from util.bad_request_rate_limiter import BadRequestRateLimiter
 from util.db import outer_atomic
 from util.json_request import JsonResponse
 from util.milestones_helpers import get_pre_requisite_courses_not_completed
-from util.password_policy_validators import validate_password_strength
+from util.password_policy_validators import validate_password_length, validate_password_strength
 from xmodule.modulestore.django import modulestore
 
 log = logging.getLogger("edx.student")
@@ -2486,18 +2486,22 @@ def validate_password(user, password):
         password: the user's proposed new password.
 
     Returns:
-        is_valid_password: a boolean indicating if the new password
-            passes the validation.
+        is_security_violated: a boolean indicating if the new password
+            passes the security policy validation.
         err_msg: an error message if there's a violation of one of the password
             checks. Otherwise, `None`.
     """
     err_msg = None
 
-    if settings.FEATURES.get('ENFORCE_PASSWORD_POLICY', False):
-        try:
+    try:
+        if settings.FEATURES.get('ENFORCE_PASSWORD_POLICY', False):
             validate_password_strength(password)
-        except ValidationError as err:
-            err_msg = _('Password: ') + '; '.join(err.messages)
+        else:
+            validate_password_length(password)
+
+    except ValidationError as err:
+        # only strength/length is not valid, no security policy violated
+        return None, _('Password: ') + '; '.join(err.messages)
 
     # also, check the password reuse policy
     if not PasswordHistory.is_allowable_password_reuse(user, password):
@@ -2524,9 +2528,9 @@ def validate_password(user, password):
             num_days
         ).format(num=num_days)
 
-    is_password_valid = err_msg is None
+    is_security_violated = err_msg is not None
 
-    return is_password_valid, err_msg
+    return is_security_violated, err_msg
 
 
 def password_reset_confirm_wrapper(request, uidb36=None, token=None):
@@ -2552,13 +2556,13 @@ def password_reset_confirm_wrapper(request, uidb36=None, token=None):
 
     if request.method == 'POST':
         password = request.POST['new_password1']
-        is_password_valid, password_err_msg = validate_password(user, password)
-        if not is_password_valid:
+        is_security_violated, password_err_msg = validate_password(user, password)
+        if password_err_msg:
             # We have a password reset attempt which violates some security
-            # policy. Use the existing Django template to communicate that
+            # policy, or minimum length. Use the existing Django template to communicate that
             # back to the user.
             context = {
-                'validlink': False,
+                'validlink': not is_security_violated,
                 'form': None,
                 'title': _('Password reset unsuccessful'),
                 'err_msg': password_err_msg,
