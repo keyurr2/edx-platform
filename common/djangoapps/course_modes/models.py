@@ -133,6 +133,8 @@ class CourseMode(models.Model):
     )
     DEFAULT_MODE_SLUG = settings.COURSE_MODE_DEFAULTS['slug']
 
+    ALL_MODES = [AUDIT, CREDIT_MODE, HONOR, NO_ID_PROFESSIONAL_MODE, PROFESSIONAL, VERIFIED, ]
+
     # Modes utilized for audit/free enrollments
     AUDIT_MODES = [AUDIT, HONOR]
 
@@ -487,6 +489,15 @@ class CourseMode(models.Model):
             bool
         """
         return slug in [cls.PROFESSIONAL, cls.NO_ID_PROFESSIONAL_MODE]
+
+    @classmethod
+    def is_mode_upgradeable(cls, mode_slug):
+        """ Returns True if the given mode can be upgraded to another.
+
+        Note: Although, in practice, learners "upgrade" from verified to credit,
+        that particular upgrade path is excluded by this method.
+        """
+        return mode_slug in cls.AUDIT_MODES
 
     @classmethod
     def is_verified_mode(cls, course_mode_tuple):

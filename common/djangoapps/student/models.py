@@ -1664,6 +1664,31 @@ class CourseEnrollment(models.Model):
                 self._course_overview = None
         return self._course_overview
 
+    @property
+    def upgrade_deadline(self):
+        """
+        Returns the upgrade deadline for this enrollment, if it is upgradeable.
+
+        If the seat cannot be upgraded, None is returned.
+
+        Note:
+            When loading this model, use `select_related` to retrieve the associated schedule object.
+
+        Returns:
+            datetime|None
+        """
+        if not CourseMode.is_mode_upgradeable(self.mode):
+            return None
+
+        try:
+            if self.schedule:
+                return self.schedule.upgrade_deadline
+        except ObjectDoesNotExist:
+            pass
+
+        verified_mode = CourseMode.objects.get(course_id=self.course_id, mode_slug=CourseMode.VERIFIED)
+        return verified_mode.expiration_datetime
+
     def is_verified_enrollment(self):
         """
         Check the course enrollment mode is verified or not
