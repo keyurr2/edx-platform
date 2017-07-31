@@ -4,7 +4,7 @@ Running migrations: source /edx/app/edxapp/edxapp_env && paver update_db --setti
 
 TODO
 * denormalize user_id and course_id on Schedule and use it as the compound join key with enrollment?
-* handle courses not in english
+* handle courses not in english - how to format dates? should they use separate templates?
 * create sailthru templates
 * course ids and asset ids in URLs do not have their "+" signs escaped
 * accessible email template
@@ -17,6 +17,8 @@ TODO
 * use read replica database instead of the live database
 * from address
 * allow configuration to change the type of BatchEmail object created (sailthru vs. django vs. ???)
+* what to do about white label?
+* how would this be adapted to handle instructor-generated content?
 
 
 Scheduled emails
