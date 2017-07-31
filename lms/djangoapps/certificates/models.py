@@ -49,6 +49,7 @@ import json
 import logging
 import os
 import uuid
+import datetime
 
 from config_models.models import ConfigurationModel
 from django.conf import settings
@@ -76,6 +77,7 @@ class CertificateStatuses(object):
     """
     Enum for certificate statuses
     """
+    dateunavailable = 'dateunavailable'
     deleted = 'deleted'
     deleting = 'deleting'
     downloadable = 'downloadable'
@@ -508,25 +510,28 @@ def certificate_status(generated_certificate):
     This returns a dictionary with a key for status, and other information.
     The status is one of the following:
 
-    unavailable  - No entry for this student--if they are actually in
-                   the course, they probably have not been graded for
-                   certificate generation yet.
-    generating   - A request has been made to generate a certificate,
-                   but it has not been generated yet.
-    regenerating - A request has been made to regenerate a certificate,
-                   but it has not been generated yet.
-    deleting     - A request has been made to delete a certificate.
+    unavailable     - No entry for this student--if they are actually in
+                      the course, they probably have not been graded for
+                      certificate generation yet.
+    generating      - A request has been made to generate a certificate,
+                      but it has not been generated yet.
+    regenerating    - A request has been made to regenerate a certificate,
+                      but it has not been generated yet.
+    deleting        - A request has been made to delete a certificate.
+    dateunavailable - A certificate has been generated, but it is
+                      unavailable to access until after the certificate
+                      availability date has passed.
 
-    deleted      - The certificate has been deleted.
-    downloadable - The certificate is available for download.
-    notpassing   - The student was graded but is not passing
-    restricted   - The student is on the restricted embargo list and
-                   should not be issued a certificate. This will
-                   be set if allow_certificate is set to False in
-                   the userprofile table
-    unverified   - The student is in verified enrollment track and
-                   the student did not have their identity verified,
-                   even though they should be eligible for the cert otherwise.
+    deleted         - The certificate has been deleted.
+    downloadable    - The certificate is available for download.
+    notpassing      - The student was graded but is not passing
+    restricted      - The student is on the restricted embargo list and
+                      should not be issued a certificate. This will
+                      be set if allow_certificate is set to False in
+                      the userprofile table
+    unverified      - The student is in verified enrollment track and
+                      the student did not have their identity verified,
+                      even though they should be eligible for the cert otherwise.
 
     If the status is "downloadable", the dictionary also contains
     "download_url".
@@ -557,6 +562,9 @@ def certificate_status(generated_certificate):
 
         if generated_certificate.status == CertificateStatuses.downloadable:
             cert_status['download_url'] = generated_certificate.download_url
+
+        if generated_certificate.course_id.certificate_available_date < datetime.datetime.utcnow():
+            cert_status['status'] = CertificateStatuses.dateunavailable
 
         return cert_status
     else:

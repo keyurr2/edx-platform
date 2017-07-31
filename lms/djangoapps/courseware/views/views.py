@@ -997,7 +997,16 @@ def _get_cert_data(student, course, course_key, is_active, enrollment_mode):
 
     cert_downloadable_status = certs_api.certificate_downloadable_status(student, course_key)
 
-    if cert_downloadable_status['is_downloadable']:
+    if cert_downloadable_status['is_date_unavailable']:
+        return CertData(
+            CertificateStatuses.dateunavailable,
+            _("Your certificate is available"),
+            _('You can keep working for a higher grade, or request your certificate now.'),
+            download_url=None,
+            cert_web_view_url=None
+        )
+
+    if cert_downloadable_status['is_downloadable'] or cert_downloadable_status['is_date_unavailable']:
         cert_status = CertificateStatuses.downloadable
         title = _('Your certificate is available')
         msg = _('You can keep working for a higher grade, or request your certificate now.')
@@ -1020,7 +1029,8 @@ def _get_cert_data(student, course, course_key, is_active, enrollment_mode):
                 )
 
         return CertData(
-            cert_status, title, msg, download_url=cert_downloadable_status['download_url'], cert_web_view_url=None
+            cert_status, title, msg,
+            download_url=cert_downloadable_status['download_url'], cert_web_view_url=None
         )
 
     if cert_downloadable_status['is_generating']:
