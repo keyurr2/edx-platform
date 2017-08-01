@@ -61,7 +61,7 @@ git+https://github.com/mitodl/django-cas.git@v2.1.1#egg=django-cas==2.1.1
 # fs==0.4.0
 git+https://github.com/edx/pyfs.git@96e1922348bfe6d99201b9512a9ed946c87b7e0b#egg=fs==0.4.0
 # The officially released version of django-debug-toolbar-mongo doesn't support DJDT 1.x. This commit does.
-git+https://github.com/hmarr/django-debug-toolbar-mongo.git@v0.1.10#egg=django-debug-toolbar-mongo==0.1.10
+git+https://github.com/hmarr/django-debug-toolbar-mongo.git@b0686a76f1ce3532088c4aee6e76b9abe61cc808#egg=django-debug-toolbar-mongo==0.1.10
 
 # NOTE (CCB): This must remain. There is one commit on the upstream repo that has not been released to PyPI.
 git+https://github.com/edx/rfc6266.git@v0.0.5-edx#egg=rfc6266==0.0.5-edx
