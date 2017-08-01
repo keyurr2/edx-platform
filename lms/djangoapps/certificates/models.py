@@ -49,7 +49,6 @@ import json
 import logging
 import os
 import uuid
-import datetime
 
 from config_models.models import ConfigurationModel
 from django.conf import settings
@@ -58,11 +57,11 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Count
 from django.dispatch import receiver
+from opaque_keys.edx.locator import CourseKey
 from django.utils.translation import ugettext_lazy as _
 from django_extensions.db.fields import CreationDateTimeField
 from model_utils import Choices
 from model_utils.models import TimeStampedModel
-from xmodule.course_module import CourseFields
 
 from badges.events.course_complete import course_badge_check
 from badges.events.course_meta import completion_check, course_group_check
@@ -78,7 +77,6 @@ class CertificateStatuses(object):
     """
     Enum for certificate statuses
     """
-    dateunavailable = 'dateunavailable'
     deleted = 'deleted'
     deleting = 'deleting'
     downloadable = 'downloadable'
@@ -350,14 +348,6 @@ class GeneratedCertificate(models.Model):
                 status=self.status,
             )
 
-    def is_date_available(self):
-        if CourseFields.certificate_available_date < datetime.datetime.utcnow():
-            self.status = CertificateStatuses.dateunavailable
-            return CertificateStatuses.dateunavailable
-        else:
-            self.status = CertificateStatuses.downloadable
-            return CertificateStatuses.downloadable
-
 
 class CertificateGenerationHistory(TimeStampedModel):
     """
@@ -527,9 +517,6 @@ def certificate_status(generated_certificate):
     regenerating    - A request has been made to regenerate a certificate,
                       but it has not been generated yet.
     deleting        - A request has been made to delete a certificate.
-    dateunavailable - A certificate has been generated, but it is
-                      unavailable to access until after the certificate
-                      availability date has passed.
 
     deleted         - The certificate has been deleted.
     downloadable    - The certificate is available for download.
@@ -551,6 +538,10 @@ def certificate_status(generated_certificate):
     # Import here instead of top of file since this module gets imported before
     # the course_modes app is loaded, resulting in a Django deprecation warning.
     from course_modes.models import CourseMode
+    from lms.djangoapps.courseware.courses import get_course_by_id
+
+    if not get_course_by_id(CourseKey.from_string(course_id)).may_certify():
+        return {'status': CertificateStatuses.unavailable, 'mode': GeneratedCertificate.MODES.honor, 'uuid': None}
 
     if generated_certificate:
         cert_status = {
@@ -571,8 +562,6 @@ def certificate_status(generated_certificate):
 
         if generated_certificate.status == CertificateStatuses.downloadable:
             cert_status['download_url'] = generated_certificate.download_url
-
-        cert_status['status'] = generated_certificate.is_date_available()
 
         return cert_status
     else:

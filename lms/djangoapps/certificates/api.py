@@ -228,7 +228,6 @@ def certificate_downloadable_status(student, course_key):
 
     response_data = {
         'is_downloadable': False,
-        'is_date_unavaiable': True if current_status['status'] == CertificateStatuses.dateunavailable else False,
         'is_generating': True if current_status['status'] in [CertificateStatuses.generating,
                                                               CertificateStatuses.error] else False,
         'is_unverified': True if current_status['status'] == CertificateStatuses.unverified else False,

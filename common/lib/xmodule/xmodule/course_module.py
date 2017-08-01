@@ -1064,7 +1064,8 @@ class CourseDescriptor(CourseFields, SequenceDescriptor, LicenseMixin):
         return course_metadata_utils.may_certify_for_course(
             self.certificates_display_behavior,
             self.certificates_show_before_end,
-            self.has_ended()
+            self.has_ended(),
+            self.id
         )
 
     def has_started(self):

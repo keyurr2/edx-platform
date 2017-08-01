@@ -93,7 +93,7 @@ def course_start_date_is_default(start, advertised_start):
     return advertised_start is None and start == DEFAULT_START_DATE
 
 
-def may_certify_for_course(certificates_display_behavior, certificates_show_before_end, has_ended):
+def may_certify_for_course(certificates_display_behavior, certificates_show_before_end, has_ended, course_id):
     """
     Returns whether it is acceptable to show the student a certificate download
     link for a course.
@@ -106,11 +106,18 @@ def may_certify_for_course(certificates_display_behavior, certificates_show_befo
             course's certificates before the course has ended.
         has_ended (bool): Whether the course has ended.
     """
+
+    from lms.djangoapps.courseware.courses import get_course_by_id
+
     show_early = (
         certificates_display_behavior in ('early_with_info', 'early_no_info')
         or certificates_show_before_end
     )
-    return show_early or has_ended
+    past_availability_date = (
+        get_course_by_id((course_id)).certificate_available_date
+        and get_course_by_id(course_id).certificate_available_date < datetime.now(utc)
+    )
+    return show_early or past_availability_date
 
 
 def sorting_score(start, advertised_start, announcement):
