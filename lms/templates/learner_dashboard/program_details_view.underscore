@@ -20,7 +20,7 @@
                     <div><%- gettext('To complete the program, you must earn a verified certificate for each course.') %></div>
                 </div>
             <% } %>
-            <a href="{completeProgramURL}" class="btn-brand btn cta-primary upgrade-button complete-program">
+            <a href="<%- completeProgramURL %>" class="btn-brand btn cta-primary upgrade-button complete-program">
                 <%- gettext('Complete Program (')%>
 
                 <% if (discount_data.is_discounted) { %>

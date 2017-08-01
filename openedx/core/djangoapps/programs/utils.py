@@ -498,8 +498,9 @@ class ProgramMarketingDataExtender(ProgramDataExtender):
     Arguments:
         program_data (dict): Representation of a program.
         user (User): The user whose enrollments to inspect.
+        allow_partial_program (bool): Flag for whether or not to allow for partial program completion
     """
-    def __init__(self, program_data, user):
+    def __init__(self, program_data, user, allow_partial_program=False):
         super(ProgramMarketingDataExtender, self).__init__(program_data, user)
 
         # Aggregate dict of instructors for the program keyed by name
@@ -509,6 +510,8 @@ class ProgramMarketingDataExtender(ProgramDataExtender):
         self.data['avg_price_per_course'] = 0.0
         self.data['number_of_courses'] = 0
         self.data['full_program_price'] = 0.0
+
+        self.allow_partial_program = allow_partial_program
 
     def _extend_program(self):
         """Aggregates data from the program data structure."""
@@ -615,6 +618,10 @@ class ProgramMarketingDataExtender(ProgramDataExtender):
                         is_learner_eligible_for_one_click_purchase = False
                         skus = []
                         break
+                elif not self.allow_partial_program:
+                    skus = []
+                    is_learner_eligible_for_one_click_purchase = False
+                    break
 
         if skus:
             try:

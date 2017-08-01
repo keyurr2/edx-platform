@@ -55,7 +55,7 @@ def program_details(request, program_uuid):
     if not program_data:
         raise Http404
 
-    program_data = ProgramMarketingDataExtender(program_data, request.user).extend()
+    program_data = ProgramMarketingDataExtender(program_data, request.user, True).extend()
     course_data = meter.progress(programs=[program_data], count_only=False)[0]
     certificate_data = get_certificates(request.user, program_data)
 
@@ -71,7 +71,6 @@ def program_details(request, program_uuid):
         'commerce_api_url': reverse('commerce_api:v0:baskets:create'),
         'buy_button_url': ecommerce_service.get_checkout_page_url(*skus)
     }
-
 
     context = {
         'urls': urls,
