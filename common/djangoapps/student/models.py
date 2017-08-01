@@ -1686,8 +1686,15 @@ class CourseEnrollment(models.Model):
         except ObjectDoesNotExist:
             pass
 
-        verified_mode = CourseMode.objects.get(course_id=self.course_id, mode_slug=CourseMode.VERIFIED)
-        return verified_mode.expiration_datetime
+        try:
+            verified_mode = CourseMode.verified_mode_for_course(self.course_id)
+
+            if verified_mode:
+                return verified_mode.expiration_datetime
+        except CourseMode.DoesNotExist:
+            pass
+
+        return None
 
     def is_verified_enrollment(self):
         """
