@@ -83,7 +83,6 @@ DEBUG_TOOLBAR_PANELS = (
 
 DEBUG_TOOLBAR_CONFIG = {
     'SHOW_TOOLBAR_CALLBACK': 'lms.envs.devstack.should_show_debug_toolbar',
-    'JQUERY_URL': None,
 }
 
 
