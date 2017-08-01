@@ -22,7 +22,7 @@ class Command(BaseCommand):
         current_date = datetime.date(*[int(x) for x in options['date'].split('-')])
         target_date = current_date - datetime.timedelta(days=1)
 
-        self.send_verified_upgrade_reminder(target_date, 19)
+        self.send_verified_upgrade_reminder(target_date, 18)
 
     def send_verified_upgrade_reminder(self, target_date, days_before_deadline):
         deadline_date = target_date + datetime.timedelta(days=days_before_deadline)
@@ -107,7 +107,50 @@ def get_upgrade_link(enrollment):
     return reverse('verify_student_upgrade_and_verify', args=(course_id,))
 
 
+from django.db import connection
+
+
 def build_email_context(schedule_ids, email_template):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT
+                profile.name AS user_full_name,
+                COALESCE(profile.name, `user`.username) AS user_personal_address,
+                schedule.start AS user_schedule_start,
+                schedule.upgrade_deadline AS user_schedule_upgrade_deadline,
+                `user`.email AS user_email,
+                `user`.username AS user_username,
+                tzpref.value AS user_time_zone,
+                enrollment.course_id,
+                course.display_name AS course_title,
+                course.start AS course_start,
+                course.end AS course_end,
+                mode.min_price AS course_verified_min_price,
+                mode.currency AS course_verified_currency,
+                mode.sku AS course_verified_sku
+            FROM
+                schedules_schedule schedule
+            JOIN
+                student_courseenrollment enrollment ON enrollment.id = schedule.enrollment_id
+            JOIN
+                auth_user `user` ON `user`.id = enrollment.user_id
+            JOIN
+                auth_userprofile profile ON profile.user_id = enrollment.user_id
+            LEFT JOIN
+                user_api_userpreference tzpref ON tzpref.user_id = enrollment.user_id AND tzpref.key = 'time_zone'
+            LEFT JOIN
+                course_overviews_courseoverview course ON course.id = enrollment.course_id
+            LEFT JOIN
+                course_modes_coursemode mode ON mode.course_id = enrollment.course_id AND mode.mode_slug = 'verified'
+            WHERE
+                schedule.id IN %s
+        """, [schedule_ids])
+        desc = cursor.description
+        nt_result = namedtuple('Result', [col[0] for col in desc])
+        print()
+        print([nt_result(*row) for row in cursor.fetchall()])
+        print()
+
     schedules = Schedule.objects.select_related('enrollment__user__profile').filter(id__in=schedule_ids)
     print(schedules.query.sql_with_params())
 
