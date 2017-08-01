@@ -410,7 +410,10 @@
             @media(min-width: $bp-screen-md) {
                 align-self: flex-end;
             }
-
+            
+            .list-price {
+                text-decoration: line-through;
+            }
         }
     }
 

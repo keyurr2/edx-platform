@@ -600,10 +600,10 @@ class ProgramMarketingDataExtender(ProgramDataExtender):
         skus = []
         if is_learner_eligible_for_one_click_purchase:
             for course in self.data['courses']:
-                is_learner_eligible_for_one_click_purchase = not any(
+                add_course_sku = not any(
                     course_run['is_enrolled'] for course_run in course['course_runs']
                 )
-                if is_learner_eligible_for_one_click_purchase:
+                if add_course_sku:
                     published_course_runs = filter(lambda run: run['status'] == 'published', course['course_runs'])
                     if len(published_course_runs) == 1:
                         for seat in published_course_runs[0]['seats']:
@@ -615,9 +615,6 @@ class ProgramMarketingDataExtender(ProgramDataExtender):
                         is_learner_eligible_for_one_click_purchase = False
                         skus = []
                         break
-                else:
-                    skus = []
-                    break
 
         if skus:
             try:

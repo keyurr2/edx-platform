@@ -33,6 +33,7 @@
                  initialize: function(options) {
                      this.options = options;
                      this.programModel = new Backbone.Model(this.options.programData);
+                     debugger;
                      this.courseData = new Backbone.Model(this.options.courseData);
                      this.certificateCollection = new Backbone.Collection(this.options.certificateData);
                      this.completedCourseCollection = new CourseCardCollection(
@@ -60,8 +61,10 @@
                              totalCount: totalCount,
                              inProgressCount: inProgressCount,
                              remainingCount: remainingCount,
-                             completedCount: completedCount
-                         };
+                             completedCount: completedCount,
+                             completeProgramURL: this.options.urls.buy_button_href
+                        };
+                     debugger;
                      data = $.extend(data, this.programModel.toJSON());
                      HtmlUtils.setHtml(this.$el, this.tpl(data));
                      this.postRender();
