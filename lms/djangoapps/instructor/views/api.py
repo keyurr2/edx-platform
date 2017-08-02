@@ -133,8 +133,8 @@ log = logging.getLogger(__name__)
 
 TASK_SUBMISSION_OK = 'created'
 
-SUCCESS_MESSAGE_TEMPLATE = "The {} report is being created. " \
-                           "To view the status of the report, see Pending Tasks below."
+SUCCESS_MESSAGE_TEMPLATE = _("The {report_type} report is being created. "
+                             "To view the status of the report, see Pending Tasks below.")
 
 
 def common_exceptions_400(func):
@@ -149,11 +149,10 @@ def common_exceptions_400(func):
         try:
             return func(request, *args, **kwargs)
         except User.DoesNotExist:
-            message = 'User does not exist.'
+            message = _('User does not exist.')
         except (AlreadyRunningError, QueueConnectionError) as err:
             message = str(err)
 
-        message = _(message)
         if use_json:
             return JsonResponseBadRequest(message)
         else:
@@ -982,7 +981,7 @@ def get_problem_responses(request, course_id):
     """
     course_key = CourseKey.from_string(course_id)
     problem_location = request.POST.get('problem_location', '')
-    report_type = 'problem responses'
+    report_type = _('problem responses')
 
     try:
         problem_key = UsageKey.from_string(problem_location)
@@ -996,7 +995,7 @@ def get_problem_responses(request, course_id):
         return JsonResponseBadRequest(_("Could not find problem with this location."))
 
     lms.djangoapps.instructor_task.api.submit_calculate_problem_responses_csv(request, course_key, problem_location)
-    success_status = _(SUCCESS_MESSAGE_TEMPLATE.format(report_type))
+    success_status = SUCCESS_MESSAGE_TEMPLATE.format(report_type=report_type)
 
     return JsonResponse({"status": success_status})
 
@@ -1216,7 +1215,7 @@ def get_students_features(request, course_id, csv=False):  # pylint: disable=red
     """
     course_key = CourseKey.from_string(course_id)
     course = get_course_by_id(course_key)
-    report_type = 'enrolled learner profile'
+    report_type = _('enrolled learner profile')
     available_features = instructor_analytics.basic.AVAILABLE_FEATURES
 
     # Allow for sites to be able to define additional columns.
@@ -1288,7 +1287,7 @@ def get_students_features(request, course_id, csv=False):  # pylint: disable=red
             course_key,
             query_features
         )
-        success_status = _(SUCCESS_MESSAGE_TEMPLATE.format(report_type))
+        success_status = SUCCESS_MESSAGE_TEMPLATE.format(report_type=report_type)
 
         return JsonResponse({"status": success_status})
 
@@ -1310,9 +1309,9 @@ def get_students_who_may_enroll(request, course_id):
     """
     course_key = CourseKey.from_string(course_id)
     query_features = ['email']
-    report_type = 'enrollment'
+    report_type = _('enrollment')
     lms.djangoapps.instructor_task.api.submit_calculate_may_enroll_csv(request, course_key, query_features)
-    success_status = _(SUCCESS_MESSAGE_TEMPLATE.format(report_type))
+    success_status = SUCCESS_MESSAGE_TEMPLATE.format(report_type=report_type)
 
     return JsonResponse({"status": success_status})
 
@@ -1405,9 +1404,9 @@ def get_enrollment_report(request, course_id):
     get the enrollment report for the particular course.
     """
     course_key = SlashSeparatedCourseKey.from_deprecated_string(course_id)
-    report_type = 'detailed enrollment'
+    report_type = _('detailed enrollment')
     lms.djangoapps.instructor_task.api.submit_detailed_enrollment_features_csv(request, course_key)
-    success_status = _(SUCCESS_MESSAGE_TEMPLATE.format(report_type))
+    success_status = SUCCESS_MESSAGE_TEMPLATE.format(report_type=report_type)
 
     return JsonResponse({"status": success_status})
 
@@ -1424,9 +1423,9 @@ def get_exec_summary_report(request, course_id):
     get the executive summary report for the particular course.
     """
     course_key = SlashSeparatedCourseKey.from_deprecated_string(course_id)
-    report_type = 'executive summary'
+    report_type = _('executive summary')
     lms.djangoapps.instructor_task.api.submit_executive_summary_report(request, course_key)
-    success_status = _(SUCCESS_MESSAGE_TEMPLATE.format(report_type))
+    success_status = SUCCESS_MESSAGE_TEMPLATE.format(report_type=report_type)
 
     return JsonResponse({"status": success_status})
 
@@ -1442,9 +1441,9 @@ def get_course_survey_results(request, course_id):
     get the survey results report for the particular course.
     """
     course_key = SlashSeparatedCourseKey.from_deprecated_string(course_id)
-    report_type = 'survey'
+    report_type = _('survey')
     lms.djangoapps.instructor_task.api.submit_course_survey_report(request, course_key)
-    success_status = _(SUCCESS_MESSAGE_TEMPLATE.format(report_type))
+    success_status = SUCCESS_MESSAGE_TEMPLATE.format(report_type=report_type)
 
     return JsonResponse({"status": success_status})
 
@@ -1471,9 +1470,9 @@ def get_proctored_exam_results(request, course_id):
     ]
 
     course_key = CourseKey.from_string(course_id)
-    report_type = 'proctored exam results'
+    report_type = _('proctored exam results')
     lms.djangoapps.instructor_task.api.submit_proctored_exam_results_report(request, course_key, query_features)
-    success_status = _(SUCCESS_MESSAGE_TEMPLATE.format(report_type))
+    success_status = SUCCESS_MESSAGE_TEMPLATE.format(report_type=report_type)
 
     return JsonResponse({"status": success_status})
 
@@ -2415,9 +2414,9 @@ def export_ora2_data(request, course_id):
     Pushes a Celery task which will aggregate ora2 responses for a course into a .csv
     """
     course_key = SlashSeparatedCourseKey.from_deprecated_string(course_id)
-    report_type = 'ORA data'
+    report_type = _('ORA data')
     lms.djangoapps.instructor_task.api.submit_export_ora2_data(request, course_key)
-    success_status = _(SUCCESS_MESSAGE_TEMPLATE.format(report_type))
+    success_status = SUCCESS_MESSAGE_TEMPLATE.format(report_type=report_type)
 
     return JsonResponse({"status": success_status})
 
@@ -2432,10 +2431,10 @@ def calculate_grades_csv(request, course_id):
     """
     AlreadyRunningError is raised if the course's grades are already being updated.
     """
-    report_type = 'grade'
+    report_type = _('grade')
     course_key = SlashSeparatedCourseKey.from_deprecated_string(course_id)
     lms.djangoapps.instructor_task.api.submit_calculate_grades_csv(request, course_key)
-    success_status = _(SUCCESS_MESSAGE_TEMPLATE.format(report_type))
+    success_status = SUCCESS_MESSAGE_TEMPLATE.format(report_type=report_type)
 
     return JsonResponse({"status": success_status})
 
@@ -2455,9 +2454,9 @@ def problem_grade_report(request, course_id):
     updated.
     """
     course_key = SlashSeparatedCourseKey.from_deprecated_string(course_id)
-    report_type = 'problem grade'
+    report_type = _('problem grade')
     lms.djangoapps.instructor_task.api.submit_problem_grade_report(request, course_key)
-    success_status = _(SUCCESS_MESSAGE_TEMPLATE.format(report_type))
+    success_status = SUCCESS_MESSAGE_TEMPLATE.format(report_type=report_type)
 
     return JsonResponse({"status": success_status})
 

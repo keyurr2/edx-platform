@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 class AlreadyRunningError(Exception):
     """Exception indicating that a background task is already running"""
 
-    message = 'Requested task is already running'
+    message = _('Requested task is already running')
 
     def __init__(self, message=None):
 
@@ -39,7 +39,7 @@ class QueueConnectionError(Exception):
     """
     Exception indicating that celery task was not created successfully.
     """
-    message = 'Error occured. Please try again later.'
+    message = _('Error occured. Please try again later.')
 
     def __init__(self, message=None):
         if not message:
@@ -102,25 +102,31 @@ def generate_already_running_error_message(task_type):
     """
 
     message = ''
-    already_running_message_template = "The {} report is being created. " \
-                                       "To view the status of the report, see Pending Tasks below. " \
-                                       "You will be able to download the report when it is complete."
+    # already_running_message_template = "The {report_type} report is being created. " \
+    #                                    "To view the status of the report, see Pending Tasks below. " \
+    #                                    "You will be able to download the report when it is complete."
     report_types = {
-        'grade_problems': 'problem grade',
-        'problem_responses_csv': 'problem responses',
-        'profile_info_csv': 'enrolled learner profile',
-        'may_enroll_info_csv': 'enrollment',
-        'detailed_enrollment_report': 'detailed enrollment',
-        'exec_summary_report': 'executive summary',
-        'course_survey_report': 'survey',
-        'proctored_exam_results_report': 'proctored exam results',
-        'export_ora2_data': 'ORA data',
-        'grade_course': 'grade',
+        'grade_problems': _('problem grade'),
+        'problem_responses_csv': _('problem responses'),
+        'profile_info_csv': _('enrolled learner profile'),
+        'may_enroll_info_csv': _('enrollment'),
+        'detailed_enrollment_report': _('detailed enrollment'),
+        'exec_summary_report': _('executive summary'),
+        'course_survey_report': _('survey'),
+        'proctored_exam_results_report': _('proctored exam results'),
+        'export_ora2_data': _('ORA data'),
+        'grade_course': _('grade'),
 
     }
 
     if report_types.get(task_type):
-        message = already_running_message_template.format(report_types.get(task_type))
+
+        message = _("The {report_type} report is being created. "
+                    "To view the status of the report, see Pending Tasks below. "
+                    "You will be able to download the report when it is complete.").format(
+            report_type=report_types.get(task_type))
+
+        # message = already_running_message_template.format(report_type = report_types.get(task_type))
 
     return message
 
@@ -242,7 +248,7 @@ def _update_instructor_task(instructor_task, task_result):
 
 def _update_instructor_task_state(instructor_task, task_state, message=None):
     """
-     Update state and output of InstructorTask object.
+    Update state and output of InstructorTask object.
     """
     instructor_task.task_state = task_state
     if message:
@@ -255,8 +261,8 @@ def _handle_instructor_task_failure(instructor_task, error):
     """
     Do required operations if task creation was not complete.
     """
-    _update_instructor_task_state(instructor_task, FAILURE, error.message)
     log.info("instructor task (%s) failed, result: %s", instructor_task.task_id, error.message)
+    _update_instructor_task_state(instructor_task, FAILURE, error.message)
 
     raise QueueConnectionError()
 
